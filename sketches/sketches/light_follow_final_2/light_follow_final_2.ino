@@ -24,7 +24,7 @@ const int ldrPins[4] = {A0, A1, A2, A3};
 int ldrAnalog[4] = {0,0,0};
 int ldrDigital[4] = {0,0,0};
 int ldrSensors = B000;
-float ldrSensorsLevels[4] = {0,0,0,0}; // a value from 0 to 4, where 5 is the strongest - aka light from 3cm and 0 is the weakest where light is greater than 19cm
+float ldrSensorsLevels[4] = {0,0,0,0}; // a value from 0 to 4, where 4 is the strongest - aka light from 3cm and 0 is the weakest where light is greater than 19cm
 int sensorThresholds[5][4]= {
   {90,94,82, 90}, //3cm
   {240,163,170, 170},

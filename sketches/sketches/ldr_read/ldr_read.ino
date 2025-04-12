@@ -5,6 +5,7 @@ int ldrAnalog[4] = {0,0,0,0};
 
 void setup() {
   // initialise ldrs as inputs
+  pinMode(A0, INPUT);
   pinMode(A1, INPUT);
   pinMode(A2, INPUT);
   pinMode(A3, INPUT);
