@@ -3,7 +3,7 @@
 #define MOT_B1_PIN 9
 #define MOT_B2_PIN 10
 
-boolean reverseL = 0; 
+boolean reverseL = 0;
 boolean reverseR = 0;
 
 /* variables to keep track of current speed of motors */
@@ -20,30 +20,43 @@ int scaleFactor = 50;
 
 // LDR READING
 
-const int ldrPins[4] = {A0, A1, A2, A3};
-int ldrAnalog[4] = {0,0,0};
-int ldrDigital[4] = {0,0,0};
-int ldrSensors = B000;
-float ldrSensorsLevels[4] = {0,0,0,0}; // a value from 0 to 4, where 4 is the strongest - aka light from 3cm and 0 is the weakest where light is greater than 19cm
-int sensorThresholds[5][4]= {
-  {90,94,82, 90}, //3cm
-  {240,163,170, 170},
-  {362,260,260, 260},
-  {450,350,320, 350},
-  {550,420,383, 400}
+// right, middle, left, rear
+const int ldrPins[4] = { A0, A1, A2, A3 };
+int ldrAnalog[4] = { 0, 0, 0, 0 };
+int ldrDigital[4] = { 0, 0, 0, 0 };
+int ldrSensors = B0000;
+float ldrSensorsLevels[4] = { 0, 0, 0, 0 };  // a value from 0 to 4, where 4 is the strongest - aka light from 3cm and 0 is the weakest where light is greater than 19cm
+int sensorThresholds[7][4] = {
+  { 90, 94, 82, 90 },     // 3cm
+  { 240, 163, 170, 170 }, // 7cm
+  { 362, 260, 260, 260 }, // 11cm
+  { 450, 350, 320, 350 }, // 15cm
+  { 550, 420, 383, 400 }, // 19cm
+  { 503, 414, 403, 463 }, // 23cm
+  { 557, 469, 506, 538 }  // 27cm
 };
 
-int brightRoomSensorThresholds[5][3] = {
-  {86,58,80},
-  {195,132,151},
-  {262,180,200},
-  {295,200,222},
-  {315,214,230}
+// int brightRoomSensorThresholds[5][4] = {
+//   { 86, 58, 80, 72 },      //3cm
+//   { 195, 132, 151, 146 },  //7cm
+//   { 262, 180, 200, 212 },  //11cm
+//   { 295, 200, 222, 220 },  //15cm
+//   { 315, 214, 230, 222 }   //19cm
+// };
+
+int brightRoomThreshold[4] = {
+  341, 280, 249, 222
 };
 
-int brightRoomThreshold[3] = {
-  341,280,249
-};
+int ambientLightThreshold[4];
+
+// check what brightness the room is to use those thresholds
+void checkAmbientLighting() {
+  readLDR();
+  for (int i = 0; i < 4; i++) {
+    ambientLightThreshold[i] = ldrAnalog[i];
+  }
+}
 
 int lightThreshold = 300;
 
@@ -56,20 +69,17 @@ void setup() {
 
   // begin serial communication
   Serial.begin(9600);
+
+  checkAmbientLighting();
+  delay(1000);
 }
 
-// check what brightness the room is to use those thresholds
-void checkAmbientLighting() {
-  readLDR();
-}
-
-void set_motor_pwm(int pwm, int IN1_PIN, int IN2_PIN)
-{
+void set_motor_pwm(int pwm, int IN1_PIN, int IN2_PIN) {
   if (pwm < 0) {  // reverse speeds
     analogWrite(IN1_PIN, -pwm);
     digitalWrite(IN2_PIN, LOW);
 
-  } else { // stop or forward
+  } else {  // stop or forward
     digitalWrite(IN1_PIN, LOW);
     analogWrite(IN2_PIN, pwm);
   }
@@ -80,8 +90,7 @@ void set_motor_pwm(int pwm, int IN1_PIN, int IN2_PIN)
 /// \param pwm_A  motor A PWM, -255 to 255
 /// \param pwm_B  motor B PWM, -255 to 255
 
-void set_motor_currents(int pwm_A, int pwm_B)
-{
+void set_motor_currents(int pwm_A, int pwm_B) {
   set_motor_pwm(pwm_A, MOT_A1_PIN, MOT_A2_PIN);
   set_motor_pwm(pwm_B, MOT_B1_PIN, MOT_B2_PIN);
 
@@ -98,32 +107,31 @@ void set_motor_currents(int pwm_A, int pwm_B)
 /// \param pwm_A  motor A PWM, -255 to 255
 /// \param pwm_B  motor B PWM, -255 to 255
 /// \param duration delay in milliseconds
-void spin_and_wait(int pwm_A, int pwm_B, int duration)
-{
+void spin_and_wait(int pwm_A, int pwm_B, int duration) {
   set_motor_currents(pwm_A, pwm_B);
   delay(duration);
 }
 
 void readLDR() {
   ldrSensors = B000;
-  for(int i = 0; i < 4; i++) {
+  for (int i = 0; i < 4; i++) {
     int sensorValue = analogRead(ldrPins[i]);
     ldrAnalog[i] = sensorValue;
     // compare with each light level
-    for(int j = 4; j >= 0; j--) {
-      if(sensorValue >= sensorThresholds[j][i]) {
-        ldrSensorsLevels[i] = j;
+    for (int j = 6; j >= 0; j--) {
+      if (sensorValue >= sensorThresholds[j][i]) {
+        ldrSensorsLevels[i] = 6 - j;
         break;
       }
     }
-    
+
     // digital sensor readings
-    ldrDigital[i] = (sensorValue <= lightThreshold)? 1:0;
- 00 }
+    ldrDigital[i] = (sensorValue <= lightThreshold) ? 1 : 0;
+  }
 }
 
 void printLDRReadings() {
-  for(int i = 0; i < 4; i++) {
+  for (int i = 0; i < 6; i++) {
     Serial.print(ldrSensorsLevels[i]);
     Serial.print(" - ");
     Serial.print(ldrAnalog[i]);
@@ -143,42 +151,43 @@ float smoothedError;
 void updateDirection() {
   // rotational error
   lastError = error;
-  error = ((ldrSensorsLevels[2])-(ldrSensorsLevels[0]));
+
+  // error, a value between -4 and 4, is the difference between left and right sensors
+  // error > 0 -> light is coming from the left side
+  // error < 0 -> light is coming from the right side
+  // error == 0 -> buggy is facing the light source
+  error = ((ldrSensorsLevels[2]) - (ldrSensorsLevels[0]));
+
+  // difference in error dE
   dE = lastError - error;
-  smoothedError = error * (1+abs(dE)) * 50;
-  Serial.print(" Directional error: ");
-  Serial.print(error);
-  Serial.print("smoothed error: ");
-  Serial.print(smoothedError);
 
-  // base speed
-  baseSpeed = ldrSensorsLevels[1] * ldrSensorsLevels[1] * (MAX_SPEED/16);
+  // if bigger difference in error (light direction suddenly changed)
+  // there is a bigger correction
+  smoothedError = error * (1 + abs(dE)) * 50;
 
-  // Serial.print("Right: ");
-  // Serial.print(ldrSensorsLevels[0]);
-  // Serial.print(" (");
-  // Serial.print(ldrAnalog[0]);
-  // Serial.print(") ");
-  Serial.print(" Middle: ");
-  Serial.print(ldrSensorsLevels[1] * ldrSensorsLevels[1]);
-    Serial.print(" (");
-  Serial.print(ldrAnalog[1]);
-  Serial.print(") ");
-  // Serial.print(" Left: ");
-  // Serial.print(ldrSensorsLevels[2]);
-  //   Serial.print(" (");
-  // Serial.print(ldrAnalog[2]);
-  // Serial.print(") ");
+  // base speed depends on the middle sensor's intensity level
+  // if its greater than the max threshold OR is in the ambient room readings
+  if (ldrSensorsLevels[1] == 0 || ldrAnalog[1] >= ambientLightThreshold[1]) {
+    leftServoSpeed = 0;
+    rightServoSpeed = 0;
+  }
 
+  else {
+    baseSpeed = ((6-ldrSensorsLevels[1]) * (6-ldrSensorsLevels[1])* (MAX_SPEED / 20));
 
-  // Serial.print(" Base speed: ");
-  // Serial.print(baseSpeed);
+    // new speed calculations -> combines the effects of directional light
+    // and light source's distance from middle sensor
+    int leftSpeed = baseSpeed + smoothedError + motorOffset;
+    int rightSpeed = baseSpeed - smoothedError - motorOffset;
+
+    // constrain used to make sure that the values remain within the max speed settings
+    leftServoSpeed = constrain(leftSpeed, -MAX_SPEED + motorOffset, MAX_SPEED + motorOffset);
+    rightServoSpeed = constrain(rightSpeed, -MAX_SPEED - motorOffset, MAX_SPEED - motorOffset);
+  }
 
 
-  leftServoSpeed = constrain(baseSpeed + smoothedError + motorOffset, -MAX_SPEED + motorOffset, MAX_SPEED + motorOffset);
-  rightServoSpeed = constrain(baseSpeed - smoothedError - motorOffset, -MAX_SPEED - motorOffset, MAX_SPEED - motorOffset);
-
-  if(ldrDigital[3]) {
+  // if the rear sensor detects light it stops everything
+  if (ldrDigital[3]) {
     leftServoSpeed = 0;
     rightServoSpeed = 0;
   }
