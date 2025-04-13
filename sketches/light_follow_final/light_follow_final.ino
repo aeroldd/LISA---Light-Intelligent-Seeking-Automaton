@@ -36,18 +36,6 @@ int sensorThresholds[7][4] = {
   { 557, 469, 506, 538 }  // 27cm
 };
 
-// int brightRoomSensorThresholds[5][4] = {
-//   { 86, 58, 80, 72 },      //3cm
-//   { 195, 132, 151, 146 },  //7cm
-//   { 262, 180, 200, 212 },  //11cm
-//   { 295, 200, 222, 220 },  //15cm
-//   { 315, 214, 230, 222 }   //19cm
-// };
-
-int brightRoomThreshold[4] = {
-  341, 280, 249, 222
-};
-
 int ambientLightThreshold[4];
 
 // check what brightness the room is to use those thresholds
